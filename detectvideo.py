@@ -18,12 +18,24 @@ if not args.get("video", False):
 else:
     camera = cv2.VideoCapture(args["video"])
 
+recx = 0
+recy = 0
 #initialize person detector
 hog = cv2.HOGDescriptor()
 hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
 while True:
     (grabbed, frame) = camera.read()
+
+
+    width = camera.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
+
+
+    centerx = width/2
+    centery = height/2
+
+    print("Center: ({}, {})".format(centerx, centery))
         
     if args.get("video") and not grabbed:
         break
@@ -54,6 +66,12 @@ while True:
     # draw the final bounding boxes
     for (xA, yA, xB, yB) in pick:
         cv2.rectangle(orig, (xA, yA), (xB, yB), (0, 255, 0), 2)
+        recx = (xA+xB)/2
+        recy = (yA + yB)/2
+        print("Center of rectangle: ({}, {})".format(recx, recy))
+        distancebeforeroot = ((recx - centerx)**2) + ((recy - centery)**2)
+        distance = distancebeforeroot**0.5
+        print("The pedestrian is {} pixels away.".format(distance))
         
     
     # show some information on the number of bounding boxes
@@ -61,6 +79,14 @@ while True:
     filename = "one"
     print("[INFO] {}: {} original boxes, {} after suppression".format(
         filename, len(rects), len(pick)))
+
+    # width = camera.get(3)
+    # height = camera.get(4)
+
+
+    
+
+    
 
     # show the output images
     #cv2.imshow("Before NMS", frame)
@@ -73,6 +99,3 @@ while True:
     
 camera.release()
 cv2.destroyAllWindows()
-
-
-      
