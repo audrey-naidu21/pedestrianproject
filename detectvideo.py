@@ -1,6 +1,8 @@
 # import necessary packages
 from imutils.object_detection import non_max_suppression
 from imutils import paths
+from collections import deque
+import math
 import numpy as np
 import argparse
 import imutils
@@ -23,6 +25,27 @@ recy = 0
 #initialize person detector
 hog = cv2.HOGDescriptor()
 hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+
+boxes = []
+numframe = 0
+maxframe = 8
+
+
+
+def calcdist(xa, ya, xb, yb):
+    rectanglex = (xa + xb)/2
+    rectangley = (ya + yb)/2
+    print("Center of rectangle: ({}, {})".format(rectanglex, rectangley))
+    disty = abs(rectangley - centery)
+    distx = abs(rectanglex - centerx)
+    return distx
+
+def calcangle(xa, ya, xb, yb):
+    rectanglex = (xa + xb)/2
+    rectangley = (ya + yb)/2
+    angleofpedestrian = math.atan2((rectangley - centery),(rectanglex - centerx))
+    return angleofpedestrian
+
 
 while True:
     (grabbed, frame) = camera.read()
@@ -63,15 +86,39 @@ while True:
     rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
     pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
 
-    # draw the final bounding boxes
+    #if numframe >= 8:
+
+
+  
+            # draw the final bounding boxes
     for (xA, yA, xB, yB) in pick:
-        cv2.rectangle(orig, (xA, yA), (xB, yB), (0, 255, 0), 2)
-        recx = (xA+xB)/2
-        recy = (yA + yB)/2
-        print("Center of rectangle: ({}, {})".format(recx, recy))
-        distancebeforeroot = ((recx - centerx)**2) + ((recy - centery)**2)
-        distance = distancebeforeroot**0.5
-        print("The pedestrian is {} pixels away.".format(distance))
+        boxes.append((xA, yA, xB, yB))
+        while len(boxes) > 8: 
+            boxes.pop(0)
+        if len(boxes) < 8:
+            cv2.rectangle(orig, (xA, yA), (xB, yB), (0, 255, 0), 2)
+            distancex = calcdist(xA, yA, xB, yB)
+            print("The pedestrian is {} pixels away.".format(distancex))
+            #angle = math.atan2((recy - centery),(recx - centerx))
+            angle = calcangle(xA, yA, xB, yB)
+            print("Angle: {}".format(angle))
+            #numframe = numframe + 1
+        if len(boxes) >= 8:
+            avga= int(np.mean( [a for (a,_,_,_) in boxes] ))
+            avgb= int(np.mean( [b for (_,b,_,_) in boxes] ))
+            avgc= int(np.mean( [c for (_,_,c,_) in boxes] ))
+            avgd= int(np.mean( [d for (_,_,_,d) in boxes] ))
+            print("Averages: {}, {}, {}, {}".format(avga, avgb, avgc, avgd))
+            distancex = calcdist(avga, avgb, avgc, avgd)
+            print("The pedestrian is {} pixels away.".format(distancex))
+            angle = calcangle(avga, avgb, avgc, avgd)
+            print("Angle: {}".format(angle))
+            cv2.rectangle(orig, (avga, avgb), (avgc, avgd), (0, 255, 0), 2)
+
+        break
+
+
+
         
     
     # show some information on the number of bounding boxes
