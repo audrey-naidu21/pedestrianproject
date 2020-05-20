@@ -29,6 +29,31 @@ hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 boxes = []
 numframe = 0
 maxframe = 8
+multboxes = []
+
+#list of lists where pedestrians[i] is a list of pedestrian i's previous positions
+pedestrians = []
+
+#center of previousframe
+previouscenter = 0
+
+#center of window
+centerx = 0
+centery = 0
+
+#distance between previous center in pedestrian and current center
+centerdifference = 0
+
+#flag to check if pedestrian was assigned and matched
+assigned = False
+
+#center of drawn rectangle
+reconex =0
+rectwox= 0
+centerboxeslist = []
+prev = 0
+now = 0
+numtotal = 0
 
 
 
@@ -45,6 +70,9 @@ def calcangle(xa, ya, xb, yb):
     rectangley = (ya + yb)/2
     angleofpedestrian = math.atan2((rectangley - centery),(rectanglex - centerx))
     return angleofpedestrian
+
+def calccenterx(xa, ya, xb, yb):
+    return (xa+xb)/2
 
 
 while True:
@@ -87,15 +115,50 @@ while True:
     pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
 
     #if numframe >= 8:
+    assignedPedestrians = {} #map off which pedestrians are already assigned
 
-
-  
             # draw the final bounding boxes
-    for (xA, yA, xB, yB) in pick:
-        boxes.append((xA, yA, xB, yB))
-        while len(boxes) > 8: 
-            boxes.pop(0)
-        if len(boxes) < 8:
+    for i, (xA, yA, xB, yB) in enumerate(pick):
+
+        # go through our list of lists data structure
+        centeronex = (xA + xB)/2
+        distancex = calcdist(xA, yA, xB, yB)
+        print("The pedestrian is {} pixels away.".format(distancex))
+        #angle = math.atan2((recy - centery),(recx - centerx))
+        angle = calcangle(xA, yA, xB, yB)
+        print("Angle: {}".format(angle))
+        assigned = False
+        for pedIndex, pedestrian in enumerate(pedestrians):
+            previouscenter = calccenterx( *pedestrian[-1]) #get center of last frame in pedestrian
+            centerdifference= abs(previouscenter - centeronex)
+            # if the box is within 100px horizontally of the average of the current pedestrian's past positions and we haven't already added a different box to this pedestrian from this frame
+            # add box to the end of our structure[i]
+            if centerdifference <= 100 and pedIndex not in assignedPedestrians:
+                pedestrian.append((xA, yA, xB, yB))
+                assigned = True
+                assignedPedestrians[pedIndex] = True
+                break
+
+    # if we didn't add this box to any pedestrian
+        # add a new pedestrian to the structure                
+        if not assigned:
+            newPedestrian = []
+            newPedestrian.append((xA, yA, xB, yB))
+            pedestrians.append( newPedestrian)
+
+
+
+
+
+
+        
+
+
+
+    for pedestrian in pedestrians:
+        while len(pedestrian) > 8: 
+            pedestrian.pop(0)
+        if len(pedestrian) < 8:
             cv2.rectangle(orig, (xA, yA), (xB, yB), (0, 255, 0), 2)
             distancex = calcdist(xA, yA, xB, yB)
             print("The pedestrian is {} pixels away.".format(distancex))
@@ -103,19 +166,19 @@ while True:
             angle = calcangle(xA, yA, xB, yB)
             print("Angle: {}".format(angle))
             #numframe = numframe + 1
-        if len(boxes) >= 8:
-            avga= int(np.mean( [a for (a,_,_,_) in boxes] ))
-            avgb= int(np.mean( [b for (_,b,_,_) in boxes] ))
-            avgc= int(np.mean( [c for (_,_,c,_) in boxes] ))
-            avgd= int(np.mean( [d for (_,_,_,d) in boxes] ))
+        if len(pedestrian) >= 8:
+            avga= int(np.mean( [a for (a,_,_,_) in pedestrian] ))
+            avgb= int(np.mean( [b for (_,b,_,_) in pedestrian] ))
+            avgc= int(np.mean( [c for (_,_,c,_) in pedestrian] ))
+            avgd= int(np.mean( [d for (_,_,_,d) in pedestrian] ))
             print("Averages: {}, {}, {}, {}".format(avga, avgb, avgc, avgd))
+            
             distancex = calcdist(avga, avgb, avgc, avgd)
+            reconex = distancex
             print("The pedestrian is {} pixels away.".format(distancex))
             angle = calcangle(avga, avgb, avgc, avgd)
             print("Angle: {}".format(angle))
             cv2.rectangle(orig, (avga, avgb), (avgc, avgd), (0, 255, 0), 2)
-
-        break
 
 
 
