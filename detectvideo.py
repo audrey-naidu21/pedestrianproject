@@ -55,6 +55,9 @@ prev = 0
 now = 0
 numtotal = 0
 
+assignedPedestrians = {} #map off which pedestrians are already assigned
+notUpdatedPedestrians = []
+
 
 
 def calcdist(xa, ya, xb, yb):
@@ -115,7 +118,15 @@ while True:
     pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
 
     #if numframe >= 8:
-    assignedPedestrians = {} #map off which pedestrians are already assigned
+
+
+    for pedIndex, pedestrian in enumerate(pedestrians):
+        
+        while pedIndex >= len(notUpdatedPedestrians):
+            notUpdatedPedestrians.append(0)
+        notUpdatedPedestrians[pedIndex] = notUpdatedPedestrians[pedIndex] + 1
+        print("Not updated Pedestrian index: {}",notUpdatedPedestrians[pedIndex])
+
 
             # draw the final bounding boxes
     for i, (xA, yA, xB, yB) in enumerate(pick):
@@ -137,6 +148,7 @@ while True:
                 pedestrian.append((xA, yA, xB, yB))
                 assigned = True
                 assignedPedestrians[pedIndex] = True
+                notUpdatedPedestrians[pedIndex] = 0
                 break
 
     # if we didn't add this box to any pedestrian
@@ -148,10 +160,6 @@ while True:
 
 
 
-
-
-
-        
 
 
 
@@ -181,6 +189,10 @@ while True:
             cv2.rectangle(orig, (avga, avgb), (avgc, avgd), (0, 255, 0), 2)
 
 
+    for pedIndex, pedestrian in enumerate(pedestrians):
+        if notUpdatedPedestrians[pedIndex] > 11:
+            pedestrians.pop(pedIndex)
+            notUpdatedPedestrians.pop(pedIndex)
 
         
     
