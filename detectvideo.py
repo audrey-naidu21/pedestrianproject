@@ -121,11 +121,12 @@ while True:
 
 
     for pedIndex, pedestrian in enumerate(pedestrians):
-        
-        while pedIndex >= len(notUpdatedPedestrians):
-            notUpdatedPedestrians.append(0)
-        notUpdatedPedestrians[pedIndex] = notUpdatedPedestrians[pedIndex] + 1
-        print("Not updated Pedestrian index: {}",notUpdatedPedestrians[pedIndex])
+        if pedIndex >= len(notUpdatedPedestrians):
+            while pedIndex >= len(notUpdatedPedestrians):
+                notUpdatedPedestrians.append(0)
+        else:
+            notUpdatedPedestrians[pedIndex] = notUpdatedPedestrians[pedIndex] + 1
+            print("Not updated Pedestrian index: {}",notUpdatedPedestrians[pedIndex])
 
 
             # draw the final bounding boxes
@@ -148,7 +149,11 @@ while True:
                 pedestrian.append((xA, yA, xB, yB))
                 assigned = True
                 assignedPedestrians[pedIndex] = True
-                notUpdatedPedestrians[pedIndex] = 0
+                if pedIndex >= len(notUpdatedPedestrians):
+                    while pedIndex >= len(notUpdatedPedestrians):
+                        notUpdatedPedestrians.append(0)
+                else:
+                    notUpdatedPedestrians[pedIndex] = 0
                 break
 
     # if we didn't add this box to any pedestrian
@@ -190,6 +195,8 @@ while True:
 
 
     for pedIndex, pedestrian in enumerate(pedestrians):
+        while pedIndex >= len(notUpdatedPedestrians):
+            notUpdatedPedestrians.append(0)
         if notUpdatedPedestrians[pedIndex] > 11:
             pedestrians.pop(pedIndex)
             notUpdatedPedestrians.pop(pedIndex)
