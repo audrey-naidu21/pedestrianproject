@@ -202,7 +202,8 @@ while True:
             notUpdatedPedestrians.pop(pedIndex)
 
         
-    
+
+        
     # show some information on the number of bounding boxes
     #filename = imagePath[imagePath.rfind("/") + 1:]
     filename = "one"
